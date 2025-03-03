@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { PENDING, INPROGRESS } from '~/utilities/helpers';
 import * as actions from './reducers';
+import { Alert, Platform } from 'react-native';
 
 export const useUpdateFields = (customerID = null) => {
   const dispatch = useDispatch();
@@ -18,13 +19,34 @@ export const useUpdateFields = (customerID = null) => {
     }
   }, [customerID, status]);
 
+  // Ensure fields.region is never null - use different default for iOS
+  const defaultRegion = Platform.OS === 'ios' ? 'Select a region' : '';
+  const safeFields = {
+    ...fields,
+    region: fields?.region || defaultRegion
+  };
+
   return {
-    fields,
+    fields: safeFields,
     setFormField: (field, value) => {
       console.log(`Updating field ${field} to ${value}`);
-
       dispatch(actions.setFormField({ field, value }));
     },
+    validateFields: () => {
+      if (!fields?.firstName || fields.firstName.trim() === '') {
+        Alert.alert('Validation Error', 'First name is required');
+        return false;
+      }
+      if (!fields?.lastName || fields.lastName.trim() === '') {
+        Alert.alert('Validation Error', 'Last name is required');
+        return false;
+      }
+      if (!fields?.region || fields.region === '' || fields.region === 'Select a region') {
+        Alert.alert('Validation Error', 'Please select a region');
+        return false;
+      }
+      return true;
+    }
   };
 };
 
